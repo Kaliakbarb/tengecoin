@@ -3,9 +3,6 @@ import { START_BALANCE, formatTenge, percentileFor, titleFor } from '@/lib/engin
 
 export const runtime = 'edge'
 
-const monoBold = fetch(new URL('./JetBrainsMono-Bold.ttf', import.meta.url)).then((r) => r.arrayBuffer())
-const monoRegular = fetch(new URL('./JetBrainsMono-Regular.ttf', import.meta.url)).then((r) => r.arrayBuffer())
-// JetBrains Mono не содержит ₸ (U+20B8) — Noto Sans подхватывает его фоллбеком
 const notoBold = fetch(new URL('./NotoSans-Bold.ttf', import.meta.url)).then((r) => r.arrayBuffer())
 
 /** Ломаная «в стиле августа 2015» для фоновой драмы. */
@@ -32,8 +29,6 @@ export async function GET(req: Request) {
   const hasResult = Number.isFinite(b)
 
   const fonts = [
-    { name: 'JetBrains Mono', data: await monoBold, weight: 700 as const, style: 'normal' as const },
-    { name: 'JetBrains Mono', data: await monoRegular, weight: 400 as const, style: 'normal' as const },
     { name: 'Noto Sans', data: await notoBold, weight: 700 as const, style: 'normal' as const },
   ]
 
@@ -47,7 +42,7 @@ export async function GET(req: Request) {
     backgroundColor: '#060a0d',
     // у satori ограниченный CSS-парсер: только простые linear-gradient
     backgroundImage: 'linear-gradient(180deg, rgba(0,230,118,0.10) 0%, rgba(6,10,13,0) 38%)',
-    fontFamily: 'JetBrains Mono',
+    fontFamily: 'Noto Sans',
     color: '#c9d6dd',
     position: 'relative',
   }
