@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #060a0d;
+  color: #c9d6dd;
+  background-image: radial-gradient(1100px 540px at 50% -12%, rgba(0, 230, 118, 0.07), transparent 62%),
+    radial-gradient(900px 520px at 105% 112%, rgba(255, 82, 82, 0.05), transparent 55%);
+  overflow-x: hidden;
+}
+
+/* плёнка сканлайнов поверх всего: терминал есть терминал */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+}
+
+.glow-up {
+  text-shadow: 0 0 16px rgba(0, 230, 118, 0.45);
+}
+.glow-down {
+  text-shadow: 0 0 16px rgba(255, 82, 82, 0.45);
+}
+.glow-gold {
+  text-shadow: 0 0 18px rgba(255, 209, 102, 0.4);
+}
+
+.panel {
+  background: linear-gradient(180deg, #0c1318, #0a0f14);
+  border: 1px solid #1a242c;
+  border-radius: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 26px rgba(0, 0, 0, 0.38);
+}
+
+.skeleton {
+  background: linear-gradient(100deg, #0b1116 40%, #14202a 50%, #0b1116 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.btn-press {
+  transition: transform 0.08s ease, filter 0.15s ease, opacity 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.96) translateY(1px);
+}
+
+/* мигающий индикатор «архивного эфира» */
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #00e676;
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.8);
+  animation: ledblink 2.4s ease-in-out infinite;
+}
+@keyframes ledblink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
