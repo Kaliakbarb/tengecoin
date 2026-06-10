@@ -1,23 +1,17 @@
-import { ImageResponse } from 'next/og'
 import { START_BALANCE, formatTenge, percentileFor, titleFor } from '@/lib/engine'
 
 export const runtime = 'edge'
 
-const notoBold = fetch(new URL('./NotoSans-Bold.ttf', import.meta.url)).then((r) => r.arrayBuffer())
+function escapeSvg(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
-/** Ломаная «в стиле августа 2015» для фоновой драмы. */
-function Spark({ color }: { color: string }) {
-  return (
-    <svg width="1100" height="240" viewBox="0 0 1100 240" style={{ position: 'absolute', bottom: 0, left: 50 }}>
-      <polyline
-        points="0,200 150,196 300,192 430,188 520,186 560,60 640,80 720,40 850,52 980,30 1100,38"
-        fill="none"
-        stroke={color}
-        strokeWidth="3"
-        opacity="0.35"
-      />
-    </svg>
-  )
+function svgText(value: string, attrs: string) {
+  return `<text ${attrs}>${escapeSvg(value)}</text>`
 }
 
 export async function GET(req: Request) {
@@ -28,73 +22,55 @@ export async function GET(req: Request) {
   const a = aRaw ? Number(aRaw) : NaN
   const hasResult = Number.isFinite(b)
 
-  const fonts = [
-    { name: 'Noto Sans', data: await notoBold, weight: 700 as const, style: 'normal' as const },
-  ]
-
-  const base: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#060a0d',
-    // у satori ограниченный CSS-парсер: только простые linear-gradient
-    backgroundImage: 'linear-gradient(180deg, rgba(0,230,118,0.10) 0%, rgba(6,10,13,0) 38%)',
-    fontFamily: 'Noto Sans',
-    color: '#c9d6dd',
-    position: 'relative',
-  }
-
-  if (!hasResult) {
-    return new ImageResponse(
-      (
-        <div style={base}>
-          <Spark color="#00e676" />
-          <div style={{ display: 'flex', fontSize: 64, fontWeight: 700, letterSpacing: 6 }}>ТЕҢГЕ СИМУЛЯТОР 🇰🇿</div>
-          <div style={{ display: 'flex', marginTop: 28, fontSize: 30, color: '#5c6b75' }}>
-            Угадай курс доллара на реальной истории USD/KZT
-          </div>
-          <div style={{ display: 'flex', marginTop: 18, fontSize: 34, color: '#00e676', fontWeight: 700 }}>
-            {formatTenge(START_BALANCE)} на старте. Сколько доживёт?
-          </div>
-        </div>
-      ),
-      { width: 1200, height: 630, fonts, emoji: 'twemoji' },
-    )
-  }
-
-  const balance = Math.max(0, Math.round(b))
-  const { title, emoji } = titleFor(balance)
+  const balance = Math.max(0, Math.round(hasResult ? b : START_BALANCE))
   const won = balance >= START_BALANCE
   const accent = won ? '#00e676' : '#ff5252'
   const accuracy = Number.isFinite(a) ? Math.min(10, Math.max(0, Math.round(a))) : null
+  const { title, emoji } = hasResult ? titleFor(balance) : { title: 'Угадай курс доллара', emoji: '' }
 
-  return new ImageResponse(
-    (
-      <div style={base}>
-        <Spark color={accent} />
-        <div style={{ display: 'flex', fontSize: 26, letterSpacing: 8, color: '#5c6b75' }}>
-          ТЕҢГЕ СИМУЛЯТОР 🇰🇿
-        </div>
-        <div style={{ display: 'flex', marginTop: 26, fontSize: 30, color: '#c9d6dd' }}>Я наторговал</div>
-        <div style={{ display: 'flex', marginTop: 8, fontSize: 96, fontWeight: 700, color: accent }}>
-          {formatTenge(balance)}
-        </div>
-        <div style={{ display: 'flex', marginTop: 20, fontSize: 40, fontWeight: 700 }}>
-          {title} {emoji}
-        </div>
-        {accuracy !== null && (
-          <div style={{ display: 'flex', marginTop: 18, fontSize: 26, color: '#5c6b75' }}>
-            угадал {accuracy}/10 · лучше {percentileFor(accuracy)}% игроков
-          </div>
-        )}
-        <div style={{ display: 'flex', marginTop: 26, fontSize: 32, fontWeight: 700, color: '#ffd166' }}>
-          Слабо?
-        </div>
-      </div>
-    ),
-    { width: 1200, height: 630, fonts, emoji: 'twemoji' },
-  )
+  const kicker = hasResult ? 'ТЕҢГЕ СИМУЛЯТОР 🇰🇿' : 'ТЕҢГЕ СИМУЛЯТОР 🇰🇿'
+  const main = hasResult ? formatTenge(balance) : '1 000 000 ₸'
+  const sub = hasResult
+    ? `${title} ${emoji}`
+    : 'Угадай курс доллара на реальной истории USD/KZT'
+  const footer = hasResult
+    ? accuracy === null
+      ? 'Слабо?'
+      : `угадал ${accuracy}/10 · лучше ${percentileFor(accuracy)}% игроков`
+    : 'Сколько доживёт?'
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.16"/>
+      <stop offset="38%" stop-color="#060a0d" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="#060a0d"/>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <path d="M50 560 L200 556 L350 552 L480 548 L570 546 L610 420 L690 440 L770 400 L900 412 L1030 390 L1150 398"
+    fill="none" stroke="${accent}" stroke-width="4" opacity="0.35"/>
+  <circle cx="1035" cy="92" r="46" fill="${accent}" opacity="0.12"/>
+  <circle cx="168" cy="500" r="72" fill="#ffd166" opacity="0.08"/>
+  ${svgText(kicker, 'x="600" y="130" text-anchor="middle" fill="#5c6b75" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="8"')}
+  ${svgText(hasResult ? 'Я наторговал' : sub, 'x="600" y="198" text-anchor="middle" fill="#c9d6dd" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700"')}
+  ${svgText(main, `x="600" y="318" text-anchor="middle" fill="${accent}" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="800" filter="url(#glow)"`)}
+  ${svgText(hasResult ? sub : 'на старте', 'x="600" y="386" text-anchor="middle" fill="#c9d6dd" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800"')}
+  ${svgText(footer, 'x="600" y="464" text-anchor="middle" fill="#ffd166" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="800"')}
+</svg>`
+
+  return new Response(svg, {
+    headers: {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+    },
+  })
 }
